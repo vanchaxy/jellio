@@ -1,0 +1,144 @@
+name: Build and Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: jellio-web/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: jellio-web
+        run: npm ci
+
+      - name: Build Frontend Single‑File
+        working-directory: jellio-web
+        run: npm run build
+
+      - name: Copy Frontend Bundle to Plugin Web
+        run: cp jellio-web/dist/index.html Jellyfin.Plugin.Jellio/Web/config.html
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Extract Release Version Number
+        id: version
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          VERSION_NUMBER="${TAG_NAME#v}"
+          echo "Using version from tag: ${VERSION_NUMBER}"
+          echo "version_number=${VERSION_NUMBER}" >> $GITHUB_OUTPUT
+
+      - name: Update Changelog in Build Config
+        run: |
+          echo "Updating changelog in build config..."
+          python3 -m pip install --user PyYAML
+
+          cat << EOF > update_yaml.py
+          import yaml
+          import os
+          import sys
+
+          config_path = 'jprm.yaml'
+          changelog_text = os.environ.get('RELEASE_BODY')
+
+          try:
+              with open(config_path, 'r') as f:
+                  data = yaml.safe_load(f)
+
+              data['changelog'] = changelog_text
+
+              with open(config_path, 'w') as f:
+                  yaml.dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+
+              print(f"Successfully updated changelog in {config_path}")
+
+          except Exception as e:
+              print(f"Error updating YAML file {config_path}: {e}", file=sys.stderr)
+              sys.exit(1)
+          EOF
+
+          python3 update_yaml.py
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+
+      - name: Build Jellyfin Plugin & Package ZIP
+        uses: oddstr13/jellyfin-plugin-repository-manager@v1.1.1
+        id: jprm
+        with:
+          dotnet-target: 'net8.0'
+          version: ${{ steps.version.outputs.version_number }}
+
+      - name: Get Zip Filename and Path
+        id: filename
+        run: |
+          ZIP_FILE_PATH="${{ steps.jprm.outputs.artifact }}"
+          ZIP_BASENAME=$(basename "${ZIP_FILE_PATH}")
+          echo "Zip full path: ${ZIP_FILE_PATH}"
+          echo "Zip filename: ${ZIP_BASENAME}"
+          echo "zip_basename=${ZIP_BASENAME}" >> $GITHUB_OUTPUT
+          echo "zip_full_path=${ZIP_FILE_PATH}" >> $GITHUB_OUTPUT
+
+      - name: Upload plugin ZIP to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.filename.outputs.zip_full_path }}
+
+      - name: Move Plugin Artifact Temporarily
+        run: |
+          echo "Moving ${{ steps.filename.outputs.zip_full_path }} to temporary location..."
+          mv "${{ steps.filename.outputs.zip_full_path }}" "/home/runner/work/plugin.zip.tmp"
+
+      - name: Checkout Metadata Branch
+        uses: actions/checkout@v4
+        with:
+          ref: metadata
+          clean: true
+
+      - name: Update Repository Manifest using jprm
+        run: |
+          echo "::group::Updating Repository Manifest"
+
+          echo "Installing jprm..."
+          python3 -m pip install --user jprm
+
+          MANIFEST_FILE="./jellyfin-repo-manifest.json"
+          TEMP_PLUGIN_ZIP="/home/runner/work/plugin.zip.tmp"
+
+          PLUGIN_DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.filename.outputs.zip_basename }}"
+
+          echo "Using manifest file: ${MANIFEST_FILE}"
+          echo "Using plugin zip: ${TEMP_PLUGIN_ZIP}"
+          echo "Using plugin download URL: ${PLUGIN_DOWNLOAD_URL}"
+
+          python3 -m jprm repo add "${MANIFEST_FILE}" "${TEMP_PLUGIN_ZIP}" --plugin-url "${PLUGIN_DOWNLOAD_URL}"
+
+          if [ $? -ne 0 ]; then
+             echo "::error::jprm repo add command failed."
+             exit 1
+          fi
+          echo "::endgroup::"
+
+      - name: Commit Updated Repository Manifest
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: metadata
+          commit_message: "repo(release): update manifest for ${{ steps.version.outputs.version_number }}"
+          file_pattern: jellyfin-repo-manifest.json
