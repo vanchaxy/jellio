@@ -8,7 +8,6 @@ using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.Jellio.Helpers;
 using Jellyfin.Plugin.Jellio.Models;
-using MediaBrowser.Controller.Devices;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
@@ -21,21 +20,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace Jellyfin.Plugin.Jellio.Controllers;
 
 [ApiController]
+[ConfigAuthorize]
 [Route("jellio/{config}")]
 [Produces(MediaTypeNames.Application.Json)]
 public class AddonController(
-    IDeviceManager deviceManager,
-    IUserManager userManager,
     IUserViewManager userViewManager,
     IDtoService dtoService,
     ILibraryManager libraryManager
 ) : ControllerBase
 {
-    private User? AuthenticateUser(ConfigModel config)
-    {
-        return RequestHelpers.GetUserByAuthToken(config.AuthToken, userManager, deviceManager);
-    }
-
     private string GetBaseUrl()
     {
         return $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
@@ -137,11 +130,7 @@ public class AddonController(
     [HttpGet("manifest.json")]
     public IActionResult GetManifest([ConfigFromBase64Json] ConfigModel config)
     {
-        var user = AuthenticateUser(config);
-        if (user == null)
-        {
-            return Unauthorized();
-        }
+        var user = (User)HttpContext.Items["JellioUser"]!;
 
         var userLibraries = LibraryHelper.GetUserLibraries(user, userViewManager, dtoService);
         userLibraries = Array.FindAll(userLibraries, l => config.LibrariesGuids.Contains(l.Id));
@@ -201,11 +190,7 @@ public class AddonController(
         string? extra = null
     )
     {
-        var user = AuthenticateUser(config);
-        if (user == null)
-        {
-            return Unauthorized();
-        }
+        var user = (User)HttpContext.Items["JellioUser"]!;
 
         var userLibraries = LibraryHelper.GetUserLibraries(user, userViewManager, dtoService);
         var catalogLibrary = Array.Find(userLibraries, l => l.Id == catalogId);
@@ -252,11 +237,7 @@ public class AddonController(
         Guid mediaId
     )
     {
-        var user = AuthenticateUser(config);
-        if (user == null)
-        {
-            return Unauthorized();
-        }
+        var user = (User)HttpContext.Items["JellioUser"]!;
 
         var item = libraryManager.GetItemById<BaseItem>(mediaId, user);
         if (item == null)
@@ -312,11 +293,7 @@ public class AddonController(
         Guid mediaId
     )
     {
-        var user = AuthenticateUser(config);
-        if (user == null)
-        {
-            return Unauthorized();
-        }
+        var user = (User)HttpContext.Items["JellioUser"]!;
 
         var item = libraryManager.GetItemById<BaseItem>(mediaId, user);
         if (item == null)
@@ -333,11 +310,7 @@ public class AddonController(
         string imdbId
     )
     {
-        var user = AuthenticateUser(config);
-        if (user == null)
-        {
-            return Unauthorized();
-        }
+        var user = (User)HttpContext.Items["JellioUser"]!;
 
         var query = new InternalItemsQuery(user)
         {
@@ -357,11 +330,7 @@ public class AddonController(
         int episodeNum
     )
     {
-        var user = AuthenticateUser(config);
-        if (user == null)
-        {
-            return Unauthorized();
-        }
+        var user = (User)HttpContext.Items["JellioUser"]!;
 
         var seriesQuery = new InternalItemsQuery(user)
         {
