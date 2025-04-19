@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Mime;
@@ -34,78 +33,59 @@ public class AddonController(
         return $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
     }
 
-    private object MapToMeta(
+    private static MetaDto MapToMeta(
         BaseItemDto dto,
         StremioType stremioType,
         string baseUrl,
         bool includeDetails = false
     )
     {
-        dynamic meta = new ExpandoObject();
-
-        meta.id = dto.ProviderIds.TryGetValue("Imdb", out var imdbId) ? imdbId : $"jellio:{dto.Id}";
-        meta.type = stremioType.ToString().ToLower(CultureInfo.InvariantCulture);
-        meta.name = dto.Name;
-        meta.poster = baseUrl + "/Items/" + dto.Id + "/Images/Primary";
-        meta.posterShape = "poster";
-        meta.genres = dto.Genres;
-
-        if (dto.Overview != null)
-        {
-            meta.description = dto.Overview;
-        }
-
-        if (dto.CommunityRating.HasValue)
-        {
-            meta.imdbRating = dto.CommunityRating.Value.ToString(
-                "F1",
-                CultureInfo.InvariantCulture
-            );
-        }
-
+        string? releaseInfo = null;
         if (dto.PremiereDate.HasValue)
         {
             var premiereYear = dto.PremiereDate.Value.Year.ToString(CultureInfo.InvariantCulture);
-            meta.releaseInfo = premiereYear;
-
-            if (stremioType is StremioType.Series)
+            releaseInfo = premiereYear;
+            if (stremioType == StremioType.Series)
             {
-                meta.releaseInfo += "-";
+                releaseInfo += "-";
                 if (dto.Status != "Continuing" && dto.EndDate.HasValue)
                 {
                     var endYear = dto.EndDate.Value.Year.ToString(CultureInfo.InvariantCulture);
                     if (premiereYear != endYear)
                     {
-                        meta.releaseInfo += dto.EndDate.Value.Year.ToString(
-                            CultureInfo.InvariantCulture
-                        );
+                        releaseInfo += endYear;
                     }
                 }
             }
         }
 
+        var meta = new MetaDto
+        {
+            Id = dto.ProviderIds.TryGetValue("Imdb", out var idVal) ? idVal : $"jellio:{dto.Id}",
+            Type = stremioType.ToString().ToLower(CultureInfo.InvariantCulture),
+            Name = dto.Name,
+            Poster = $"{baseUrl}/Items/{dto.Id}/Images/Primary",
+            PosterShape = "poster",
+            Genres = dto.Genres,
+            Description = dto.Overview,
+            ImdbRating = dto.CommunityRating?.ToString("F1", CultureInfo.InvariantCulture),
+            ReleaseInfo = releaseInfo,
+        };
+
         if (includeDetails)
         {
-            if (dto.RunTimeTicks.HasValue && dto.RunTimeTicks.Value != 0)
-            {
-                var runTimeMin = dto.RunTimeTicks.Value / 600000000;
-                meta.runtime = runTimeMin.ToString(CultureInfo.InvariantCulture) + " min";
-            }
-
-            if (dto.ImageTags.ContainsKey(ImageType.Logo))
-            {
-                meta.logo = baseUrl + "/Items/" + dto.Id + "/Images/Logo";
-            }
-
-            if (dto.BackdropImageTags.Length != 0)
-            {
-                meta.background = baseUrl + "/Items/" + dto.Id + "/Images/Backdrop/0";
-            }
-
-            if (dto.PremiereDate.HasValue)
-            {
-                meta.released = dto.PremiereDate.Value.ToString("o");
-            }
+            meta.Runtime =
+                dto.RunTimeTicks.HasValue && dto.RunTimeTicks.Value != 0
+                    ? $"{dto.RunTimeTicks.Value / 600000000} min"
+                    : null;
+            meta.Logo = dto.ImageTags.ContainsKey(ImageType.Logo)
+                ? $"{baseUrl}/Items/{dto.Id}/Images/Logo"
+                : null;
+            meta.Background =
+                dto.BackdropImageTags.Length != 0
+                    ? $"{baseUrl}/Items/{dto.Id}/Images/Backdrop/0"
+                    : null;
+            meta.Released = dto.PremiereDate?.ToString("o");
         }
 
         return meta;
@@ -117,11 +97,11 @@ public class AddonController(
         var dtoOptions = new DtoOptions(true);
         var dtos = dtoService.GetBaseItemDtos(items, dtoOptions, user);
         var streams = dtos.SelectMany(dto =>
-            dto.MediaSources.Select(source => new
+            dto.MediaSources.Select(source => new StreamDto
             {
-                url = $"{baseUrl}/videos/{dto.Id}/stream?mediaSourceId={source.Id}&static=true",
-                name = "Jellio",
-                description = source.Name,
+                Url = $"{baseUrl}/videos/{dto.Id}/stream?mediaSourceId={source.Id}&static=true",
+                Name = "Jellio",
+                Description = source.Name,
             })
         );
         return Ok(new { streams });
@@ -251,7 +231,7 @@ public class AddonController(
         };
         var dto = dtoService.GetBaseItemDto(item, dtoOptions, user);
         var baseUrl = GetBaseUrl();
-        dynamic meta = MapToMeta(dto, stremioType, baseUrl, includeDetails: true);
+        var meta = MapToMeta(dto, stremioType, baseUrl, includeDetails: true);
 
         if (stremioType is StremioType.Series)
         {
@@ -263,24 +243,18 @@ public class AddonController(
             var episodes = series.GetEpisodes(user, dtoOptions, false).ToList();
             var seriesItemOptions = new DtoOptions { Fields = [ItemFields.Overview] };
             var dtos = dtoService.GetBaseItemDtos(episodes, seriesItemOptions, user);
-            var videos = dtos.Select(episode =>
+            var videos = dtos.Select(episode => new VideoDto
             {
-                dynamic video = new ExpandoObject();
-                video.id = $"jellio:{episode.Id}";
-                video.title = episode.Name;
-                video.thumbnail = baseUrl + "/Items/" + episode.Id + "/Images/Primary";
-                video.available = true;
-                video.episode = episode.IndexNumber;
-                video.season = episode.ParentIndexNumber;
-                video.overview = episode.Overview;
-                if (episode.PremiereDate.HasValue)
-                {
-                    video.released = episode.PremiereDate.Value.ToString("o");
-                }
-
-                return video;
+                Id = $"jellio:{episode.Id}",
+                Title = episode.Name,
+                Thumbnail = $"{baseUrl}/Items/{episode.Id}/Images/Primary",
+                Available = true,
+                Episode = episode.IndexNumber ?? 0,
+                Season = episode.ParentIndexNumber ?? 0,
+                Overview = episode.Overview,
+                Released = episode.PremiereDate?.ToString("o"),
             });
-            meta.videos = videos;
+            meta.Videos = videos;
         }
 
         return Ok(new { meta });
@@ -314,7 +288,7 @@ public class AddonController(
 
         var query = new InternalItemsQuery(user)
         {
-            HasAnyProviderId = new Dictionary<string, string> { ["Imdb"] = "tt" + imdbId },
+            HasAnyProviderId = new Dictionary<string, string> { ["Imdb"] = $"tt{imdbId}" },
             IncludeItemTypes = [BaseItemKind.Movie],
         };
         var items = libraryManager.GetItemList(query);
@@ -335,7 +309,7 @@ public class AddonController(
         var seriesQuery = new InternalItemsQuery(user)
         {
             IncludeItemTypes = [BaseItemKind.Series],
-            HasAnyProviderId = new Dictionary<string, string> { ["Imdb"] = "tt" + imdbId },
+            HasAnyProviderId = new Dictionary<string, string> { ["Imdb"] = $"tt{imdbId}" },
         };
         var seriesItems = libraryManager.GetItemList(seriesQuery);
 
