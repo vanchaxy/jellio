@@ -131,6 +131,11 @@ public class AddonController(
                 },
                 id = lib.Id.ToString(),
                 name = lib.Name,
+                extra = new[]
+                {
+                    new { name = "skip", isRequired = false },
+                    new { name = "search", isRequired = false },
+                },
             };
         });
 
@@ -185,20 +190,37 @@ public class AddonController(
             folder = libraryManager.GetUserRootFolder();
         }
 
+        var extras =
+            extra
+                ?.Split('&')
+                .Select(e => e.Split('='))
+                .Where(parts => parts.Length == 2)
+                .ToDictionary(parts => parts[0], parts => parts[1])
+            ?? new Dictionary<string, string>();
+
+        int startIndex =
+            extras.TryGetValue("skip", out var skipValue)
+            && int.TryParse(skipValue, out var parsedSkip)
+                ? parsedSkip
+                : 0;
+        extras.TryGetValue("search", out var searchTerm);
+
         var dtoOptions = new DtoOptions
         {
             Fields = [ItemFields.ProviderIds, ItemFields.Overview, ItemFields.Genres],
         };
         var query = new InternalItemsQuery(user)
         {
-            Recursive = false,
+            Recursive = true, // need this for search to work
+            IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series],
             OrderBy =
             [
                 (ItemSortBy.ProductionYear, SortOrder.Descending),
                 (ItemSortBy.SortName, SortOrder.Ascending),
             ],
             Limit = 100,
-            StartIndex = 0,
+            StartIndex = startIndex,
+            SearchTerm = searchTerm,
             ParentId = catalogLibrary.Id,
             DtoOptions = dtoOptions,
         };
