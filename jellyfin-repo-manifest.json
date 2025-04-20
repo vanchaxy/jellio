@@ -1,1 +1,20 @@
-[]
+[
+    {
+        "guid": "e874be83-fe36-4568-abac-f5ce0574b409",
+        "name": "Jellio",
+        "description": "This plugin provides integration between Jellyfin and the Jellio service.\n",
+        "overview": "Integrates Jellio features with Jellyfin.",
+        "owner": "vanchaxy",
+        "category": "General",
+        "versions": [
+            {
+                "version": "0.1.0.0",
+                "changelog": "- Initial release of the Jellio plugin.",
+                "targetAbi": "10.10.0.0",
+                "sourceUrl": "https://github.com/vanchaxy/jellio/releases/download/v0.1.0/jellio_0.1.0.0.zip",
+                "checksum": "96da272aa08bd411587c9cebba0b3084",
+                "timestamp": "2025-04-20T18:03:50Z"
+            }
+        ]
+    }
+]
