@@ -139,12 +139,14 @@ public class AddonController(
             };
         });
 
+        var catalogNames = userLibraries.Select(l => l.Name).ToList();
+        var descriptionText = $"Play movies and series from {config.ServerName}: {string.Join(", ", catalogNames)}";
         var manifest = new
         {
             id = "com.stremio.jellio",
             version = "0.0.1",
             name = "Jellio",
-            description = "Play movies and series from Jellyfin.",
+            description = descriptionText,
             resources = new object[]
             {
                 "catalog",
