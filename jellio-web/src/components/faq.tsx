@@ -7,44 +7,40 @@ import {
 
 const QUESTIONS = [
   {
-    id: 'what-is-plexio',
-    question: `What is Plexio?`,
-    answer: `Plexio is an addon that connects Plex with Stremio, enabling you to stream your Plex content directly
-             within the Stremio interface. It allows you to integrate Plex's media library, manage metadata, and enjoy
-             seamless streaming across devices.`,
+    id: 'what-is-jellio',
+    question: `What is Jellio?`,
+    answer: `Jellio is a plugin that connects Jellyfin with Stremio, enabling you to stream your Jellyfin media library directly within the Stremio interface. It fetches metadata and provides seamless playback across your devices.`,
   },
   {
-    id: 'is-plexio-secure',
-    question: `Is Plexio secure?`,
-    answer: `Yes, Plexio is secure. The code is available on GitHub, allowing you to review and verify its security.
-             It uses OAuth for safe login without requiring you to share your Plex password. Additionally, if needed,
-             you can terminate access through the "Authorized Devices" tab in your Plex account settings.`,
+    id: 'what-jellio-gives-stremio-users',
+    question: `What does Jellio provide for Stremio users?`,
+    answer: `It provides a way to stream your local media library directly in Stremio, letting you have all your media in one place.`,
   },
   {
-    id: 'how-plexio-work',
-    question: `How does Plexio work?`,
-    answer: `Plexio uses the Plex API to match Stremio IMDB data to the corresponding Plex media ID and provide metadata
-             for your content. The addon itself is not involved in streaming; it only supplies metadata. Streaming works
-             directly between the Stremio client and your Plex Media Server.`,
+    id: 'what-jellio-gives-jellyfin-users',
+    question: `What does Jellio provide for Jellyfin users?`,
+    answer: `It lets you use any Stremio client to play your Jellyfin media, including unusual clients like Meta Quest VR or various TV OSes.`,
   },
+  {
+    id: 'is-jellio-secure',
+    question: `Is Jellio secure?`,
+    answer: `Yes, Jellio is secure. It is installed as a Jellyfin addon and all communication happens directly between your Jellyfin server and the Stremio client without any external communications. The source code is open source, allowing you to review it. It uses Jellyfin's access tokens for authentication, so your Jellyfin credentials are not exposed. You can revoke access at any time from your Jellyfin account settings.`,
+  },
+  {
+    id: 'how-revoke-access',
+    question: `How do I revoke access?`,
+    answer: `You can revoke Jellio access tokens in your Jellyfin dashboard under Settings → Devices. Simply delete the device named “Jellio” to stop future access.`,
+  },
+
   {
     id: 'where-find-support',
     question: `Where can I find support?`,
-    answer: `You can find support on our Discord channel, through GitHub issues, or by email. Links to all support
-             channels are located in the top-left corner of the page.`,
+    answer: `You can find support on our GitHub repository by opening issues, join our Discord community, or email me at support@jellio.stream. Links are available in the top navigation bar.`,
   },
   {
-    id: 'can-self-host',
-    question: `Can I self-host?`,
-    answer: `Yes, you can self-host Plexio. Instructions are available in the source code repository's README file.`,
-  },
-  {
-    id: 'what-is-transcoded',
-    question: `What is a transcoded stream?`,
-    answer: `A transcoded stream is a version of your media that’s converted to a different format or resolution to suit
-             your device or network. Direct play is usually better, as it streams the original file without
-             modification. Use transcoding if the original file isn’t compatible with your device or if your network
-             needs a lower bitrate for smoother playback.`,
+    id: 'is-jellio-free',
+    question: `Is Jellio free and open source?`,
+    answer: `Yes, Jellio is completely free and open source under. Contributions are welcome on the GitHub repository.`,
   },
 ];
 

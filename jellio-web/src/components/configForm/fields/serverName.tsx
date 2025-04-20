@@ -22,11 +22,13 @@ export const ServerNameField: FC<Props> = ({ form }) => {
       name="serverName"
       render={({ field }) => (
         <FormItem className="rounded-lg border p-2">
-          <FormLabel className="text-base">Server</FormLabel>
+          <FormLabel className="text-base">Server name</FormLabel>
           <FormControl>
             <Input {...field} />
           </FormControl>
-          <FormDescription>This is your server name.</FormDescription>
+          <FormDescription>
+            Friendly server name for display in the Stremio UI.
+          </FormDescription>
           <FormMessage />
         </FormItem>
       )}

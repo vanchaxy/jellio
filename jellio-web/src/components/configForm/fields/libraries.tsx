@@ -26,9 +26,9 @@ export const LibrariesField: FC<Props> = ({ form, serverName, libraries }) => {
       render={() => (
         <FormItem className="rounded-lg border p-2">
           <div className="mb-4">
-            <FormLabel className="text-base">Sections</FormLabel>
+            <FormLabel className="text-base">Catalogs</FormLabel>
             <FormDescription>
-              Select the Plex library sections to access in Stremio.
+              Select which Jellyfin libraries to include in Stremio discovery.
             </FormDescription>
           </div>
           {libraries.length > 0 ? (
