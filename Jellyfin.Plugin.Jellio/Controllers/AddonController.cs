@@ -130,7 +130,7 @@ public class AddonController(
                     _ => null,
                 },
                 id = lib.Id.ToString(),
-                name = lib.Name,
+                name = $"{lib.Name} | {config.ServerName}",
                 extra = new[]
                 {
                     new { name = "skip", isRequired = false },

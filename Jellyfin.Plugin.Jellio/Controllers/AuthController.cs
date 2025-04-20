@@ -15,7 +15,7 @@ namespace Jellyfin.Plugin.Jellio.Controllers;
 public class AuthController(ISessionManager sessionManager) : ControllerBase
 {
     [Authorize]
-    [HttpGet("start-session")]
+    [HttpPost("start-session")]
     public async Task<IActionResult> StartSession()
     {
         var userId = RequestHelpers.GetCurrentUserId(User) ?? throw new ResourceNotFoundException();

@@ -1,6 +1,7 @@
 using System.Net.Mime;
 using System.Reflection;
 using Jellyfin.Plugin.Jellio.Helpers;
+using MediaBrowser.Controller;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,8 @@ namespace Jellyfin.Plugin.Jellio.Controllers;
 public class WebController(
     IUserManager userManager,
     IUserViewManager userViewManager,
-    IDtoService dtoService
+    IDtoService dtoService,
+    IServerApplicationHost serverApplicationHost
 ) : ControllerBase
 {
     private readonly Assembly _executingAssembly = Assembly.GetExecutingAssembly();
@@ -24,7 +26,7 @@ public class WebController(
     [HttpGet("{config?}/configure")]
     public IActionResult GetIndex(string? config = null)
     {
-        const string ResourceName = "Jellyfin.Plugin.Jellio.Web.index.html";
+        const string ResourceName = "Jellyfin.Plugin.Jellio.Web.config.html";
 
         var resourceStream = _executingAssembly.GetManifestResourceStream(ResourceName);
 
@@ -37,10 +39,10 @@ public class WebController(
     }
 
     [Authorize]
-    [HttpGet("libraries")]
+    [HttpGet("server-info")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces(MediaTypeNames.Application.Json)]
-    public IActionResult GetLibraries()
+    public IActionResult GetServerInfo()
     {
         var user = RequestHelpers.GetCurrentUser(User, userManager);
         if (user == null)
@@ -48,8 +50,9 @@ public class WebController(
             return Unauthorized();
         }
 
+        var friendlyName = serverApplicationHost.FriendlyName;
         var libraries = LibraryHelper.GetUserLibraries(user, userViewManager, dtoService);
 
-        return Ok(libraries);
+        return Ok(new { name = friendlyName, libraries });
     }
 }
