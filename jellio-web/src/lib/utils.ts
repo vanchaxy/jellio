@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function getBaseUrl() {
+export function getBaseUrl(): string {
   var match = window.location.href.match(/.*?\/jellio/);
   if (!match) {
     throw new Error('URL must include /jellio');

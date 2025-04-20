@@ -1,4 +1,4 @@
-type IconProps = React.HTMLAttributes<SVGElement>;
+type IconProps = React.SVGProps<SVGSVGElement>;
 
 export const Icons = {
   gitHub: (props: IconProps) => (

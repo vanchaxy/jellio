@@ -1,10 +1,11 @@
-import { FC } from 'react';
+import type { FC } from 'react';
 import ConfigForm from '@/components/configForm';
 import FAQ from '@/components/faq.tsx';
 import Header from '@/components/header.tsx';
+import type { ServerInfo } from '@/types';
 
 interface Props {
-  serverInfo: any;
+  serverInfo: ServerInfo;
 }
 
 const ConfigFormPage: FC<Props> = ({ serverInfo }) => {

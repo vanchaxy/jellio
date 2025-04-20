@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { ConfigFormType } from '@/components/configForm/formSchema.tsx';
+import type { ConfigFormType } from '@/components/configForm/formSchema.tsx';
 import { Checkbox } from '@/components/ui/checkbox.tsx';
 import {
   FormControl,
@@ -10,11 +10,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form.tsx';
+import type { Library } from '@/types';
 
 interface Props {
   form: UseFormReturn<ConfigFormType>;
   serverName: string;
-  libraries: any[];
+  libraries: Library[];
 }
 
 export const LibrariesField: FC<Props> = ({ form, serverName, libraries }) => {
@@ -31,7 +32,7 @@ export const LibrariesField: FC<Props> = ({ form, serverName, libraries }) => {
             </FormDescription>
           </div>
           {libraries.length > 0 ? (
-            libraries.map((item: any) => (
+            libraries.map((item: Library) => (
               <FormField
                 key={item.key}
                 control={form.control}
@@ -45,7 +46,7 @@ export const LibrariesField: FC<Props> = ({ form, serverName, libraries }) => {
                       <FormControl>
                         <Checkbox
                           checked={field.value?.some(
-                            (v: any) => v.key === item.key,
+                            (v: Library) => v.key === item.key,
                           )}
                           onCheckedChange={(checked) => {
                             return checked

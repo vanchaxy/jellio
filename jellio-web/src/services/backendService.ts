@@ -1,7 +1,10 @@
 import axios from 'axios';
 import { getBaseUrl } from '@/lib/utils';
+import type { Library } from '@/types';
 
-export const getServerInfo = async (token: string) => {
+export const getServerInfo = async (
+  token: string,
+): Promise<{ serverName: string; libraries: Library[] }> => {
   try {
     const response = await axios.get(`${getBaseUrl()}/server-info`, {
       headers: {

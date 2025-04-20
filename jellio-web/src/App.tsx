@@ -7,7 +7,7 @@ function App() {
   const serverInfo = useServerInfo();
 
   if (serverInfo === undefined) {
-    return;
+    return null;
   }
 
   if (serverInfo === null) {
@@ -15,7 +15,7 @@ function App() {
     window.location.replace(
       `${jellyfinUrl}/web/#/login.html?url=%2Fconfigurationpage%3Fname%3DJellio`,
     );
-    return;
+    return null;
   }
 
   return (

@@ -1,23 +1,23 @@
-import { FC } from 'react';
+import type { FC } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { encode } from 'js-base64';
+import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import {
   LibrariesField,
   ServerNameField,
 } from '@/components/configForm/fields';
-import {
-  formSchema,
-  ConfigFormType,
-} from '@/components/configForm/formSchema.tsx';
+import type { ConfigFormType } from '@/components/configForm/formSchema.tsx';
+import { formSchema } from '@/components/configForm/formSchema.tsx';
 import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button.tsx';
 import { Form } from '@/components/ui/form';
 import { getBaseUrl } from '@/lib/utils';
 import { startAddonSession } from '@/services/backendService';
+import type { ServerInfo } from '@/types';
 
 interface Props {
-  serverInfo: any;
+  serverInfo: ServerInfo;
 }
 
 const ConfigForm: FC<Props> = ({ serverInfo }) => {
@@ -31,11 +31,11 @@ const ConfigForm: FC<Props> = ({ serverInfo }) => {
 
   const serverName = form.watch('serverName');
 
-  async function onSubmit(configuration: any, event: any) {
+  const onSubmit: SubmitHandler<ConfigFormType> = async (values, event) => {
     const newToken = await startAddonSession(serverInfo.accessToken);
-    var configuration: any = {
+    const configuration = {
       AuthToken: newToken,
-      LibrariesGuids: configuration.libraries.map((lib: any) =>
+      LibrariesGuids: values.libraries.map((lib) =>
         lib.key.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5'),
       ),
       ServerName: serverInfo.serverName,
@@ -45,12 +45,15 @@ const ConfigForm: FC<Props> = ({ serverInfo }) => {
     const encodedConfiguration = encode(JSON.stringify(configuration), true);
     const addonUrl = `${getBaseUrl()}/${encodedConfiguration}/manifest.json`;
 
-    if (event.nativeEvent.submitter.name === 'clipboard') {
+    const submitter = (event?.nativeEvent as SubmitEvent)?.submitter as
+      | HTMLButtonElement
+      | undefined;
+    if (submitter?.name === 'clipboard') {
       navigator.clipboard.writeText(addonUrl);
     } else {
       window.location.href = addonUrl.replace(/https?:\/\//, 'stremio://');
     }
-  }
+  };
 
   return (
     <Form {...form}>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import type { Maybe } from '@/types';
 
-const useAccessToken = (): string | null | undefined => {
-  const [accessToken, setAccessToken] = useState<string | null | undefined>();
+const useAccessToken = (): Maybe<string> => {
+  const [accessToken, setAccessToken] = useState<Maybe<string>>();
 
   useEffect(() => {
     const storedCredentialsString = localStorage.getItem(
@@ -9,7 +10,9 @@ const useAccessToken = (): string | null | undefined => {
     );
 
     if (storedCredentialsString) {
-      const storedCredentials = JSON.parse(storedCredentialsString);
+      const storedCredentials = JSON.parse(storedCredentialsString) as {
+        Servers: { AccessToken: string }[];
+      };
       const serverCredentials = storedCredentials.Servers.find(
         (e: any) => e.AccessToken,
       );

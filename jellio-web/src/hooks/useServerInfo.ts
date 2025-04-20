@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import useAccessToken from '@/hooks/useAccessToken.ts';
 import { getServerInfo } from '@/services/backendService.ts';
+import type { ServerInfo, Maybe } from '@/types';
 
-const useServerInfo = (): any | null | undefined => {
+const useServerInfo = (): Maybe<ServerInfo> => {
   const accessToken = useAccessToken();
-  const [serverInfo, setServerInfo] = useState<any | null | undefined>();
+  const [serverInfo, setServerInfo] = useState<ServerInfo | null | undefined>();
 
   useEffect(() => {
     if (accessToken === null) {
