@@ -1,0 +1,87 @@
+name: Build and Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: jellio-web/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: jellio-web
+        run: npm ci
+
+      - name: Build Frontend Single‑File
+        working-directory: jellio-web
+        run: npm run build
+
+      - name: Copy Frontend Bundle to Plugin Web
+        run: cp jellio-web/dist/index.html Jellyfin.Plugin.Jellio/Web/config.html
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build Jellyfin Plugin & Package ZIP
+        uses: oddstr13/jellyfin-plugin-repository-manager@v1.1.1
+        id: jprm
+        with:
+          dotnet-target: 'net8.0'
+
+      - name: Upload plugin ZIP to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.jprm.outputs.artifact }}
+
+      - name: Move Manifest for Metadata Update
+        run: |
+          if [ -f manifest.json ]; then
+            mv manifest.json /home/runner/work/manifest.json.tmp
+            echo "Moved manifest.json to temporary location."
+          else
+            echo "ERROR: manifest.json not found after build step!"
+            exit 1
+          fi
+
+      - name: Checkout Metadata Branch
+        run: |
+          git fetch origin metadata --depth=1 || echo "Metadata branch doesn't exist remotely yet, creating."
+          git checkout -B metadata origin/metadata || git checkout -b metadata
+          git clean -fdx # Clean any leftover files from previous branch
+
+      - name: Place Manifest and Prepare Commit
+        run: |
+          if [ -f /home/runner/work/manifest.json.tmp ]; then
+            # Move to root and rename the file
+            mv /home/runner/work/manifest.json.tmp ./jellyfin-repo-manifest.json
+            echo "Placed manifest as jellyfin-repo-manifest.json in the root directory."
+            # Stage the specific renamed file
+            git add jellyfin-repo-manifest.json
+          else
+             echo "ERROR: Temporary manifest.json not found!"
+             exit 1
+          fi
+
+      - name: Update Jellyfin Repo Manifest on Metadata Branch
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: metadata
+          commit_message: "misc(release): update jellyfin-repo-manifest.json for ${{ github.ref_name }}"
+          file_pattern: jellyfin-repo-manifest.json
+          skip_fetch: true
