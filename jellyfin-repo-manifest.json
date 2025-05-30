@@ -8,6 +8,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "0.1.1.0",
+                "changelog": "**Full Changelog**: https://github.com/vanchaxy/jellio/compare/v0.1.0...v0.1.1",
+                "targetAbi": "10.10.0.0",
+                "sourceUrl": "https://github.com/vanchaxy/jellio/releases/download/v0.1.1/jellio_0.1.1.0.zip",
+                "checksum": "aa42a1c9c572598daccf1b64c2a6bf64",
+                "timestamp": "2025-05-30T17:17:51Z"
+            },
+            {
                 "version": "0.1.0.0",
                 "changelog": "- Initial release of the Jellio plugin.",
                 "targetAbi": "10.10.0.0",
